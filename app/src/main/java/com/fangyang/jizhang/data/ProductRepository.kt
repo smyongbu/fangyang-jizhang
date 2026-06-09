@@ -10,6 +10,15 @@ class ProductRepository(private val dao: ProductDao) {
 
     val allRecords: Flow<List<ProductRecord>> = dao.getAllRecords()
 
+    val allBindings: Flow<List<BarcodeBinding>> = dao.getAllBindings()
+
+    /** 改名：同时更新绑定关系和该条形码下已有记录。 */
+    suspend fun renameProduct(barcode: String, newName: String) {
+        val name = newName.trim()
+        dao.updateBindingName(barcode, name)
+        dao.updateRecordsName(barcode, name)
+    }
+
     /** 条形码对应的商品名，没绑定返回 null。 */
     suspend fun nameForBarcode(barcode: String): String? =
         dao.findBinding(barcode)?.name

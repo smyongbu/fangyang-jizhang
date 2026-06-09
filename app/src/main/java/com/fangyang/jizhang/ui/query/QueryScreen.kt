@@ -3,6 +3,7 @@ package com.fangyang.jizhang.ui.query
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,15 +11,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -36,30 +48,78 @@ fun QueryScreen(viewModel: ProductViewModel) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
-    // 最新的在最下面，进入后滚到底部
-    LaunchedEffect(records.size) {
-        if (records.isNotEmpty()) listState.scrollToItem(records.size - 1)
+    var keyword by remember { mutableStateOf("") }
+    var filter by remember { mutableStateOf(QueryFilter()) }
+    var showFilter by remember { mutableStateOf(false) }
+
+    val filtered = remember(records, keyword, filter) {
+        records.filter { it.matches(keyword, filter) }
+    }
+
+    // 默认（无搜索/过滤）时，最新的在最下面并滚到底部
+    val isDefaultView = keyword.isBlank() && !filter.isActive
+    LaunchedEffect(filtered.size, isDefaultView) {
+        if (isDefaultView && filtered.isNotEmpty()) listState.scrollToItem(filtered.size - 1)
     }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("查询") }) },
     ) { padding ->
-        if (records.isEmpty()) {
-            Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("还没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+        Column(Modifier.padding(padding).fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                items(records, key = { it.id }) { record ->
-                    RecordCard(record)
+                OutlinedTextField(
+                    value = keyword,
+                    onValueChange = { keyword = it },
+                    placeholder = { Text("搜索商品名 / 条形码") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { showFilter = true }) {
+                    BadgedBox(badge = { if (filter.isActive) Badge() }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "限制搜索")
+                    }
+                }
+            }
+
+            if (filter.isActive) {
+                Text(
+                    "已限制：${filter.field.label}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                )
+            }
+
+            if (filtered.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        if (records.isEmpty()) "还没有记录" else "没有符合条件的记录",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(filtered, key = { it.id }) { record -> RecordCard(record) }
                 }
             }
         }
+    }
+
+    if (showFilter) {
+        FilterDialog(
+            current = filter,
+            onDismiss = { showFilter = false },
+            onApply = { filter = it; showFilter = false },
+        )
     }
 }
 

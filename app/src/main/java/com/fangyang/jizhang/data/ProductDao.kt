@@ -23,4 +23,15 @@ interface ProductDao {
     /** 绑定/更新条形码对应的商品名（一个条形码只保留一个名字）。 */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertBinding(binding: BarcodeBinding)
+
+    /** 设置页：所有已绑定的条形码。 */
+    @Query("SELECT * FROM barcode_bindings ORDER BY name ASC")
+    fun getAllBindings(): Flow<List<BarcodeBinding>>
+
+    @Query("UPDATE barcode_bindings SET name = :name WHERE barcode = :barcode")
+    suspend fun updateBindingName(barcode: String, name: String)
+
+    /** 同步更新该条形码已有记录里的商品名。 */
+    @Query("UPDATE product_records SET name = :name WHERE barcode = :barcode")
+    suspend fun updateRecordsName(barcode: String, name: String)
 }

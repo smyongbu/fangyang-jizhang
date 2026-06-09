@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.fangyang.jizhang.FangYangApp
+import com.fangyang.jizhang.data.BarcodeBinding
 import com.fangyang.jizhang.data.ProductRecord
 import com.fangyang.jizhang.data.ProductRepository
 import com.fangyang.jizhang.util.todayStartMillis
@@ -47,6 +48,19 @@ class ProductViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList(),
         )
+
+    val bindings: StateFlow<List<BarcodeBinding>> =
+        repository.allBindings.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
+    /** 设置页：修改条形码绑定的商品名。 */
+    fun renameProduct(barcode: String, newName: String) {
+        if (newName.isBlank()) return
+        viewModelScope.launch { repository.renameProduct(barcode, newName) }
+    }
 
     /** 扫到条形码后初始化表单；若已绑定过名字则自动填入。 */
     fun startForm(barcode: String) {

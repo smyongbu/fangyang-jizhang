@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,11 +20,13 @@ import androidx.navigation.compose.rememberNavController
 import com.fangyang.jizhang.ui.query.QueryScreen
 import com.fangyang.jizhang.ui.record.RecordFormScreen
 import com.fangyang.jizhang.ui.scan.ScannerScreen
+import com.fangyang.jizhang.ui.settings.SettingsScreen
 
 private object Routes {
     const val SCAN = "scan"
     const val FORM = "form"
     const val QUERY = "query"
+    const val SETTINGS = "settings"
 }
 
 @Composable
@@ -59,6 +62,17 @@ fun MainScaffold(viewModel: ProductViewModel) {
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                     label = { Text("查询") },
                 )
+                NavigationBarItem(
+                    selected = route == Routes.SETTINGS,
+                    onClick = {
+                        navController.navigate(Routes.SETTINGS) {
+                            popUpTo(Routes.SCAN)
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("设置") },
+                )
             }
         },
     ) { padding ->
@@ -85,6 +99,9 @@ fun MainScaffold(viewModel: ProductViewModel) {
             }
             composable(Routes.QUERY) {
                 QueryScreen(viewModel)
+            }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(viewModel)
             }
         }
     }
