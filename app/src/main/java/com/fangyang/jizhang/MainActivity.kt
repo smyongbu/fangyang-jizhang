@@ -5,8 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.fangyang.jizhang.ui.AppNav
-import com.fangyang.jizhang.ui.TransactionViewModel
+import com.fangyang.jizhang.ui.MainScaffold
+import com.fangyang.jizhang.ui.ProductViewModel
 import com.fangyang.jizhang.ui.theme.FangYangTheme
 
 class MainActivity : ComponentActivity() {
@@ -15,9 +15,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FangYangTheme {
-                val viewModel: TransactionViewModel =
-                    viewModel(factory = TransactionViewModel.Factory)
-                AppNav(viewModel)
+                val viewModel: ProductViewModel =
+                    viewModel(factory = ProductViewModel.Factory)
+                MainScaffold(viewModel)
             }
         }
     }

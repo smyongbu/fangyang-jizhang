@@ -1,50 +1,52 @@
 # 方羊记账
 
-一个简洁的个人记账 Android App。原生 Kotlin + Jetpack Compose + Room，数据保存在手机本地。
+一个给小店用的**扫码进货记录** Android app。原生 Kotlin + Jetpack Compose + Room + CameraX + ML Kit，数据保存在手机本地。
 
-## 功能（v1）
+## 功能
 
-- 记一笔：收入 / 支出、金额、分类（带 emoji 图标）、备注、日期
-- 首页：按月切换，顶部显示当月收入 / 支出 / 结余汇总
-- 账单列表：按天分组，显示每天净额
-- 点账单可编辑或删除
-- 本地数据库存储（Room），关机重启数据都在
+底部两个标签页：
 
-## 怎么跑起来
+**① 记录**
+- 进入即摄像头取景，自动识别**一维条形码**（EAN-13/UPC 等商品码，不扫二维码）
+- 识别后进入填写界面：
+  - 条形码若未绑定商品名则手动填写（一个条形码绑定一个名字），已绑定则自动填入
+  - 进货日期（默认今天）、生产日期、过期日期，统一年月日；点击后先选年（今年±3 共 7 个）→ 月 → 日
+  - 进货价格、零售价格，数字键盘输入，带 ¥
+  - 点「确定」保存，回到扫码界面继续扫下一个
 
-1. 安装 **Android Studio**（官网：https://developer.android.com/studio ，下载后一路默认安装，它会自带 Android SDK 和模拟器）。
-2. 打开 Android Studio → **Open** → 选这个文件夹（方羊记账）。
-3. 第一次打开会自动联网下载依赖（Gradle Sync），等进度条跑完。
-4. 顶部选一个模拟器（没有就点 Device Manager 新建一个），或用数据线连真机（需打开「开发者选项 → USB 调试」）。
-5. 点绿色 ▶ 运行。
+**② 查询**
+- 按记录时间排序，最新的在最下面，进入自动滚到底部
+
+## 怎么得到 APK
+
+本项目用 GitHub Actions 云端编译，本地无需安装任何环境：
+
+1. push 代码到 GitHub
+2. 仓库 **Actions** 页 → 最新一次运行 → 底部 **Artifacts** 下载 `app-debug-apk`
+3. 把 APK 传到安卓手机，点开安装（需允许「未知来源」）
 
 ## 代码结构
 
 ```
 app/src/main/java/com/fangyang/jizhang/
 ├─ FangYangApp.kt          全局 Application，持有数据库 / 仓库
-├─ MainActivity.kt         入口 Activity
+├─ MainActivity.kt         入口
 ├─ data/                   数据层
-│  ├─ Transaction.kt       账单实体（Room）
-│  ├─ TransactionType.kt   收入 / 支出枚举
-│  ├─ Category.kt          预置分类
-│  ├─ TransactionDao.kt    数据库操作
-│  ├─ AppDatabase.kt       Room 数据库
-│  ├─ Converters.kt        枚举存取转换
-│  └─ TransactionRepository.kt  仓库（以后接云同步在这层）
-├─ ui/                     界面层
-│  ├─ TransactionViewModel.kt   状态与逻辑
-│  ├─ AppNav.kt            页面导航
-│  ├─ HomeScreen.kt        首页（汇总 + 账单列表）
-│  ├─ AddEditScreen.kt     记一笔 / 编辑
-│  └─ theme/               配色、主题
+│  ├─ ProductRecord.kt     进货记录实体
+│  ├─ BarcodeBinding.kt    条形码↔商品名 绑定
+│  ├─ ProductDao.kt / AppDatabase.kt / ProductRepository.kt
+├─ ui/
+│  ├─ ProductViewModel.kt  状态与逻辑
+│  ├─ MainScaffold.kt      底部两个标签页 + 导航
+│  ├─ scan/                扫码（CameraX + ML Kit）
+│  ├─ record/              填写界面 + 级联年月日选择
+│  └─ query/               查询列表
 └─ util/Format.kt          金额、日期格式化
 ```
 
 ## 后续可以加
 
-- 分类统计 / 图表（饼图、趋势）
-- 自定义分类
-- 预算、账户
-- 云同步、多设备（在 `TransactionRepository` 这一层接入后端）
-- 导出 Excel / CSV
+- 按商品名/条形码搜索、按过期日期提醒
+- 库存数量、出入库
+- 自定义数字键盘、编辑/删除记录
+- 导出 Excel、云同步

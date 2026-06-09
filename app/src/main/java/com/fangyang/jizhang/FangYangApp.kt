@@ -2,7 +2,7 @@ package com.fangyang.jizhang
 
 import android.app.Application
 import com.fangyang.jizhang.data.AppDatabase
-import com.fangyang.jizhang.data.TransactionRepository
+import com.fangyang.jizhang.data.ProductRepository
 
 /**
  * 全局 Application。数据库和仓库是单例，挂在这里，
@@ -10,5 +10,5 @@ import com.fangyang.jizhang.data.TransactionRepository
  */
 class FangYangApp : Application() {
     val database by lazy { AppDatabase.get(this) }
-    val repository by lazy { TransactionRepository(database.transactionDao()) }
+    val repository by lazy { ProductRepository(database.productDao()) }
 }
