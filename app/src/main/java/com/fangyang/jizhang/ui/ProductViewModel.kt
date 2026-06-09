@@ -9,6 +9,7 @@ import com.fangyang.jizhang.FangYangApp
 import com.fangyang.jizhang.data.BarcodeBinding
 import com.fangyang.jizhang.data.ProductRecord
 import com.fangyang.jizhang.data.ProductRepository
+import com.fangyang.jizhang.util.formatAmount
 import com.fangyang.jizhang.util.todayStartMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,7 +29,11 @@ data class FormState(
     val expiryDate: Long = todayStartMillis(),
     val purchasePrice: String = "",
     val retailPrice: String = "",
+    val editingId: Long? = null,        // 非空表示在修改已有记录
+    val originalRecordDate: Long = 0L,  // 修改时保留原记录时间
 ) {
+    val isEditing: Boolean get() = editingId != null
+
     val canSave: Boolean
         get() = name.isNotBlank() &&
             purchasePrice.toDoubleOrNull() != null &&
@@ -73,6 +78,22 @@ class ProductViewModel(
         }
     }
 
+    /** 从查询页点进来修改已有记录，填充表单。 */
+    fun startEdit(record: ProductRecord) {
+        _form.value = FormState(
+            barcode = record.barcode,
+            name = record.name,
+            nameWasBound = false,
+            purchaseDate = record.purchaseDate,
+            productionDate = record.productionDate,
+            expiryDate = record.expiryDate,
+            purchasePrice = formatAmount(record.purchasePrice),
+            retailPrice = formatAmount(record.retailPrice),
+            editingId = record.id,
+            originalRecordDate = record.recordDate,
+        )
+    }
+
     fun updateName(v: String) = _form.update { it.copy(name = v) }
     fun updatePurchaseDate(v: Long) = _form.update { it.copy(purchaseDate = v) }
     fun updateProductionDate(v: Long) = _form.update { it.copy(productionDate = v) }
@@ -85,18 +106,18 @@ class ProductViewModel(
         val f = _form.value
         if (!f.canSave) return
         viewModelScope.launch {
-            repository.saveRecord(
-                ProductRecord(
-                    barcode = f.barcode,
-                    name = f.name.trim(),
-                    purchaseDate = f.purchaseDate,
-                    productionDate = f.productionDate,
-                    expiryDate = f.expiryDate,
-                    purchasePrice = f.purchasePrice.toDouble(),
-                    retailPrice = f.retailPrice.toDouble(),
-                    recordDate = System.currentTimeMillis(),
-                )
+            val record = ProductRecord(
+                id = f.editingId ?: 0L,
+                barcode = f.barcode,
+                name = f.name.trim(),
+                purchaseDate = f.purchaseDate,
+                productionDate = f.productionDate,
+                expiryDate = f.expiryDate,
+                purchasePrice = f.purchasePrice.toDouble(),
+                retailPrice = f.retailPrice.toDouble(),
+                recordDate = if (f.isEditing) f.originalRecordDate else System.currentTimeMillis(),
             )
+            if (f.isEditing) repository.updateRecord(record) else repository.saveRecord(record)
             _form.value = FormState()
             onSaved()
         }

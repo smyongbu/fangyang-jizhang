@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -15,6 +16,9 @@ interface ProductDao {
 
     @Insert
     suspend fun insertRecord(record: ProductRecord): Long
+
+    @Update
+    suspend fun updateRecord(record: ProductRecord)
 
     /** 按条形码查绑定的商品名，没绑定返回 null。 */
     @Query("SELECT * FROM barcode_bindings WHERE barcode = :barcode LIMIT 1")

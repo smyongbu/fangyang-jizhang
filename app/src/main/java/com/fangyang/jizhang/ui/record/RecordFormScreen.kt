@@ -58,7 +58,7 @@ fun RecordFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("填写") },
+                title = { Text(if (form.isEditing) "修改记录" else "填写") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")

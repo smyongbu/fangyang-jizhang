@@ -91,14 +91,18 @@ fun MainScaffold(viewModel: ProductViewModel) {
                 RecordFormScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
-                    onSaved = {
-                        // 保存后回到扫码界面，准备扫下一个
-                        navController.popBackStack(Routes.SCAN, inclusive = false)
-                    },
+                    // 保存后回到来的页面（扫码继续扫，或查询页）
+                    onSaved = { navController.popBackStack() },
                 )
             }
             composable(Routes.QUERY) {
-                QueryScreen(viewModel)
+                QueryScreen(
+                    viewModel = viewModel,
+                    onEditRecord = { record ->
+                        viewModel.startEdit(record)
+                        navController.navigate(Routes.FORM)
+                    },
+                )
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(viewModel)

@@ -28,4 +28,9 @@ class ProductRepository(private val dao: ProductDao) {
         dao.insertRecord(record)
         dao.upsertBinding(BarcodeBinding(record.barcode, record.name))
     }
+
+    /** 修改一条已有记录。 */
+    suspend fun updateRecord(record: ProductRecord) {
+        dao.updateRecord(record)
+    }
 }

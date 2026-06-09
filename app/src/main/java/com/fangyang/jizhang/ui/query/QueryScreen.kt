@@ -1,5 +1,6 @@
 package com.fangyang.jizhang.ui.query
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,7 +45,10 @@ import com.fangyang.jizhang.util.formatYmd
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QueryScreen(viewModel: ProductViewModel) {
+fun QueryScreen(
+    viewModel: ProductViewModel,
+    onEditRecord: (ProductRecord) -> Unit,
+) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
@@ -108,7 +112,9 @@ fun QueryScreen(viewModel: ProductViewModel) {
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(filtered, key = { it.id }) { record -> RecordCard(record) }
+                    items(filtered, key = { it.id }) { record ->
+                        RecordCard(record, onClick = { onEditRecord(record) })
+                    }
                 }
             }
         }
@@ -124,8 +130,8 @@ fun QueryScreen(viewModel: ProductViewModel) {
 }
 
 @Composable
-private fun RecordCard(record: ProductRecord) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun RecordCard(record: ProductRecord, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
