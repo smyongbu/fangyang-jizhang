@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,7 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.fangyang.jizhang.ui.record.CascadingDatePickerDialog
+import com.fangyang.jizhang.ui.record.DatePickerWheelDialog
 import com.fangyang.jizhang.util.formatAmount
 import com.fangyang.jizhang.util.formatYmd
 import com.fangyang.jizhang.util.todayStartMillis
@@ -152,7 +151,7 @@ fun FilterDialog(
     }
 
     datePickerFor?.let { which ->
-        CascadingDatePickerDialog(
+        DatePickerWheelDialog(
             title = if (which == "start") "起始日期" else "结束日期",
             initialMillis = (if (which == "start") startMillis else endMillis) ?: todayStartMillis(),
             onDismiss = { datePickerFor = null },

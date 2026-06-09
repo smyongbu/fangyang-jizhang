@@ -20,7 +20,7 @@ data class QueryFilter(
     val minPrice: Double? = null,
     val maxPrice: Double? = null,
 ) {
-    val isActive: Boolean get() = field != FilterField.NONE
+    val isActive: Boolean get() = this.field != FilterField.NONE
 }
 
 /** 一条记录是否同时满足关键词和过滤条件。 */
