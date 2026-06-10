@@ -33,4 +33,39 @@ class ProductRepository(private val dao: ProductDao) {
     suspend fun updateRecord(record: ProductRecord) {
         dao.updateRecord(record)
     }
+
+    // ---- 同步：导出快照 / 合并 / 覆盖 ----
+
+    /** 把本地所有数据打包成快照。 */
+    suspend fun exportSnapshot(): Snapshot =
+        Snapshot(
+            syncedAt = System.currentTimeMillis(),
+            records = dao.getAllRecordsOnce(),
+            bindings = dao.getAllBindingsOnce(),
+        )
+
+    /** 本地是否有任何数据。 */
+    suspend fun isLocalEmpty(): Boolean =
+        dao.getAllRecordsOnce().isEmpty() && dao.getAllBindingsOnce().isEmpty()
+
+    /** 合并：把快照里本地没有的记录/绑定加进来（按内容指纹去重，冲突时保留本地绑定）。 */
+    suspend fun mergeWith(snapshot: Snapshot) {
+        val localKeys = dao.getAllRecordsOnce().map { it.contentKey() }.toSet()
+        val newRecords = snapshot.records
+            .filter { it.contentKey() !in localKeys }
+            .map { it.copy(id = 0) }
+        if (newRecords.isNotEmpty()) dao.insertRecords(newRecords)
+
+        val localBarcodes = dao.getAllBindingsOnce().map { it.barcode }.toSet()
+        val newBindings = snapshot.bindings.filter { it.barcode !in localBarcodes }
+        if (newBindings.isNotEmpty()) dao.insertBindings(newBindings)
+    }
+
+    /** 用快照覆盖本地（保留云端数据）。 */
+    suspend fun replaceWith(snapshot: Snapshot) {
+        dao.clearRecords()
+        dao.clearBindings()
+        dao.insertRecords(snapshot.records.map { it.copy(id = 0) })
+        dao.insertBindings(snapshot.bindings)
+    }
 }

@@ -38,4 +38,24 @@ interface ProductDao {
     /** 同步更新该条形码已有记录里的商品名。 */
     @Query("UPDATE product_records SET name = :name WHERE barcode = :barcode")
     suspend fun updateRecordsName(barcode: String, name: String)
+
+    // ---- 同步用：一次性读取 / 批量写入 / 清空 ----
+
+    @Query("SELECT * FROM product_records")
+    suspend fun getAllRecordsOnce(): List<ProductRecord>
+
+    @Query("SELECT * FROM barcode_bindings")
+    suspend fun getAllBindingsOnce(): List<BarcodeBinding>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecords(records: List<ProductRecord>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBindings(bindings: List<BarcodeBinding>)
+
+    @Query("DELETE FROM product_records")
+    suspend fun clearRecords()
+
+    @Query("DELETE FROM barcode_bindings")
+    suspend fun clearBindings()
 }
