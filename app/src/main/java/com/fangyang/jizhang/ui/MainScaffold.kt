@@ -22,6 +22,8 @@ import com.fangyang.jizhang.ui.record.RecordFormScreen
 import com.fangyang.jizhang.ui.scan.ScannerScreen
 import com.fangyang.jizhang.ui.settings.BindingEditScreen
 import com.fangyang.jizhang.ui.settings.SettingsScreen
+import com.fangyang.jizhang.ui.sync.SyncScreen
+import com.fangyang.jizhang.ui.sync.SyncViewModel
 
 private object Routes {
     const val RECORDS = "records"     // 记录（列表，默认首页）
@@ -29,6 +31,7 @@ private object Routes {
     const val FORM = "form"
     const val SETTINGS = "settings"
     const val SETTINGS_BINDINGS = "settings_bindings"
+    const val SETTINGS_SYNC = "settings_sync"
 }
 
 @Composable
@@ -66,7 +69,9 @@ fun MainScaffold(viewModel: ProductViewModel) {
                 )
                 // 第三个：设置
                 NavigationBarItem(
-                    selected = route == Routes.SETTINGS || route == Routes.SETTINGS_BINDINGS,
+                    selected = route == Routes.SETTINGS ||
+                        route == Routes.SETTINGS_BINDINGS ||
+                        route == Routes.SETTINGS_SYNC,
                     onClick = {
                         navController.navigate(Routes.SETTINGS) {
                             popUpTo(Routes.RECORDS)
@@ -108,10 +113,18 @@ fun MainScaffold(viewModel: ProductViewModel) {
                 )
             }
             composable(Routes.SETTINGS) {
-                SettingsScreen(onOpenBindings = { navController.navigate(Routes.SETTINGS_BINDINGS) })
+                SettingsScreen(
+                    onOpenBindings = { navController.navigate(Routes.SETTINGS_BINDINGS) },
+                    onOpenSync = { navController.navigate(Routes.SETTINGS_SYNC) },
+                )
             }
             composable(Routes.SETTINGS_BINDINGS) {
                 BindingEditScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_SYNC) {
+                val syncViewModel: SyncViewModel =
+                    androidx.lifecycle.viewmodel.compose.viewModel(factory = SyncViewModel.Factory)
+                SyncScreen(viewModel = syncViewModel, onBack = { navController.popBackStack() })
             }
         }
     }

@@ -68,5 +68,9 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
 
+    // Dropbox 同步：HTTP + 后台任务
+    implementation(libs.okhttp)
+    implementation(libs.androidx.work.runtime)
+
     debugImplementation(libs.androidx.ui.tooling)
 }

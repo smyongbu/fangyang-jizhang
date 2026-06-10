@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,22 +27,37 @@ import androidx.compose.ui.unit.sp
 /** 设置页：菜单形式，点「修改商品名」才进入编辑页。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onOpenBindings: () -> Unit) {
+fun SettingsScreen(onOpenBindings: () -> Unit, onOpenSync: () -> Unit) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("设置") }) },
     ) { padding ->
-        Column(Modifier.padding(padding).padding(12.dp)) {
+        Column(
+            Modifier.padding(padding).padding(12.dp),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+        ) {
             SettingEntry(
+                icon = Icons.Default.Edit,
                 title = "修改商品名",
                 subtitle = "更改条形码绑定的商品名字",
                 onClick = onOpenBindings,
+            )
+            SettingEntry(
+                icon = Icons.Default.CloudSync,
+                title = "Dropbox 同步",
+                subtitle = "登录 Dropbox，自动备份/同步数据",
+                onClick = onOpenSync,
             )
         }
     }
 }
 
 @Composable
-private fun SettingEntry(title: String, subtitle: String, onClick: () -> Unit) {
+private fun SettingEntry(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -50,7 +66,7 @@ private fun SettingEntry(title: String, subtitle: String, onClick: () -> Unit) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Default.Edit,
+                    icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                 )
