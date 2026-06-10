@@ -24,6 +24,7 @@ class SyncManager(
 
     val isConnected: Boolean get() = store.isConnected
     val autoSyncEnabled: Boolean get() = store.autoSync
+    val autoSyncIntervalMinutes: Long get() = store.autoSyncIntervalMinutes
     val lastSyncMillis: Long get() = store.lastSyncMillis
     val savedBaseUrl: String get() = store.baseUrl
     val savedUsername: String get() = store.username.orEmpty()
@@ -91,17 +92,24 @@ class SyncManager(
 
     fun setAutoSync(enabled: Boolean) {
         store.autoSync = enabled
-        if (enabled) {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-                .setConstraints(
-                    Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-                )
-                .build()
-            WorkManager.getInstance(appContext)
-                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
-        } else {
-            cancelAutoSync()
-        }
+        if (enabled) scheduleWork() else cancelAutoSync()
+    }
+
+    /** 设置自动同步间隔（分钟）。若已开启自动同步会立即按新间隔重排。 */
+    fun setAutoSyncInterval(minutes: Long) {
+        store.autoSyncIntervalMinutes = minutes
+        if (store.autoSync) scheduleWork()
+    }
+
+    private fun scheduleWork() {
+        val minutes = store.autoSyncIntervalMinutes.coerceAtLeast(15)
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(minutes, TimeUnit.MINUTES)
+            .setConstraints(
+                Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+            )
+            .build()
+        WorkManager.getInstance(appContext)
+            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     private fun cancelAutoSync() {

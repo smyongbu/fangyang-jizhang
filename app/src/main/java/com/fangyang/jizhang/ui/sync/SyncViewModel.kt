@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** 可选的自动同步间隔（分钟）。 */
+val SYNC_INTERVAL_OPTIONS = listOf(15L, 30L, 60L, 180L, 360L, 720L, 1440L)
+
+fun formatInterval(minutes: Long): String =
+    if (minutes < 60) "${minutes}分钟" else "${minutes / 60}小时"
+
 sealed interface SyncDialog {
     data object None : SyncDialog
     data object Conflict : SyncDialog                       // 云端+本地都有数据
@@ -23,6 +29,7 @@ sealed interface SyncDialog {
 data class SyncUiState(
     val connected: Boolean = false,
     val autoSync: Boolean = false,
+    val autoSyncInterval: Long = 60L,
     val lastSync: Long = 0L,
     val savedUrl: String = "",
     val savedUsername: String = "",
@@ -45,6 +52,7 @@ class SyncViewModel(private val manager: SyncManager) : ViewModel() {
             it.copy(
                 connected = manager.isConnected,
                 autoSync = manager.autoSyncEnabled,
+                autoSyncInterval = manager.autoSyncIntervalMinutes,
                 lastSync = manager.lastSyncMillis,
                 savedUrl = manager.savedBaseUrl,
                 savedUsername = manager.savedUsername,
@@ -114,7 +122,12 @@ class SyncViewModel(private val manager: SyncManager) : ViewModel() {
 
     fun setAutoSync(enabled: Boolean) {
         manager.setAutoSync(enabled)
-        syncStatus(if (enabled) "已开启自动同步（每隔约 1 小时）" else "已关闭自动同步")
+        syncStatus(if (enabled) "已开启自动同步" else "已关闭自动同步")
+    }
+
+    fun setAutoSyncInterval(minutes: Long) {
+        manager.setAutoSyncInterval(minutes)
+        syncStatus("同步间隔已设为 ${formatInterval(minutes)}")
     }
 
     private fun launchBusy(block: suspend () -> Unit) {

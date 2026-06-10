@@ -24,6 +24,11 @@ class WebDavStore(context: Context) {
         get() = prefs.getBoolean("auto_sync", false)
         set(v) { prefs.edit().putBoolean("auto_sync", v).apply() }
 
+    /** 自动同步间隔（分钟）。WorkManager 最小 15 分钟。 */
+    var autoSyncIntervalMinutes: Long
+        get() = prefs.getLong("auto_interval", 60L)
+        set(v) { prefs.edit().putLong("auto_interval", v).apply() }
+
     var lastSyncMillis: Long
         get() = prefs.getLong("last_sync", 0L)
         set(v) { prefs.edit().putLong("last_sync", v).apply() }

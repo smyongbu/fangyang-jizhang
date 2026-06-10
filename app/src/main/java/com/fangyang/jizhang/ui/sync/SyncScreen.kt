@@ -6,6 +6,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -161,6 +164,7 @@ private fun DisconnectedView(state: SyncUiState, viewModel: SyncViewModel) {
     ) { Text("连接") }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ConnectedView(state: SyncUiState, viewModel: SyncViewModel) {
     Text("已连接坚果云", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -194,6 +198,27 @@ private fun ConnectedView(state: SyncUiState, viewModel: SyncViewModel) {
             Text("每隔约 1 小时在后台合并同步", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = state.autoSync, onCheckedChange = viewModel::setAutoSync)
+    }
+
+    if (state.autoSync) {
+        Spacer(Modifier.height(12.dp))
+        Text("同步间隔", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(6.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SYNC_INTERVAL_OPTIONS.forEach { minutes ->
+                FilterChip(
+                    selected = state.autoSyncInterval == minutes,
+                    onClick = { viewModel.setAutoSyncInterval(minutes) },
+                    label = { Text(formatInterval(minutes)) },
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "系统最低 15 分钟；实际触发时间由系统统一调度，可能略有延迟。",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 
     Spacer(Modifier.height(24.dp))
