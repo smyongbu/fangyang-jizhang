@@ -67,13 +67,22 @@ class ProductViewModel(
         viewModelScope.launch { repository.renameProduct(barcode, newName) }
     }
 
-    /** 扫到条形码后初始化表单；若已绑定过名字则自动填入。 */
+    /**
+     * 扫到条形码后初始化表单：
+     * - 若该条形码记录过，自动填入商品名，并带出最近一次的进货价/零售价。
+     */
     fun startForm(barcode: String) {
         _form.value = FormState(barcode = barcode)
         viewModelScope.launch {
-            val name = repository.nameForBarcode(barcode)
-            if (name != null) {
-                _form.update { it.copy(name = name, nameWasBound = true) }
+            val last = repository.lastRecordForBarcode(barcode)
+            val name = repository.nameForBarcode(barcode) ?: last?.name
+            _form.update { current ->
+                current.copy(
+                    name = name ?: current.name,
+                    nameWasBound = name != null,
+                    purchasePrice = last?.let { formatAmount(it.purchasePrice) } ?: current.purchasePrice,
+                    retailPrice = last?.let { formatAmount(it.retailPrice) } ?: current.retailPrice,
+                )
             }
         }
     }

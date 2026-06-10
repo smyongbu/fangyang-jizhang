@@ -24,6 +24,10 @@ interface ProductDao {
     @Query("SELECT * FROM barcode_bindings WHERE barcode = :barcode LIMIT 1")
     suspend fun findBinding(barcode: String): BarcodeBinding?
 
+    /** 该条形码最近一次的记录（用于带出上次的价格）。 */
+    @Query("SELECT * FROM product_records WHERE barcode = :barcode ORDER BY recordDate DESC LIMIT 1")
+    suspend fun lastRecordForBarcode(barcode: String): ProductRecord?
+
     /** 绑定/更新条形码对应的商品名（一个条形码只保留一个名字）。 */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertBinding(binding: BarcodeBinding)

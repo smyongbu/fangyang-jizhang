@@ -23,6 +23,10 @@ class ProductRepository(private val dao: ProductDao) {
     suspend fun nameForBarcode(barcode: String): String? =
         dao.findBinding(barcode)?.name
 
+    /** 该条形码最近一次的记录（用于带出上次的价格）。 */
+    suspend fun lastRecordForBarcode(barcode: String): ProductRecord? =
+        dao.lastRecordForBarcode(barcode)
+
     /** 保存一条进货记录，并记住「条形码 → 商品名」的绑定。 */
     suspend fun saveRecord(record: ProductRecord) {
         dao.insertRecord(record)

@@ -1,4 +1,4 @@
-# 方羊记账
+# 扫码记账
 
 一个给小店用的**扫码进货记录** Android app。原生 Kotlin + Jetpack Compose + Room + CameraX + ML Kit，数据保存在手机本地。
 
