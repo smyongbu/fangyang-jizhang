@@ -6,9 +6,12 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** 金额格式化：1234.5 -> "1,234.50"（符号由界面单独加 ¥） */
+/**
+ * 金额格式化：保留最多两位小数，去掉末尾多余的 0 和小数点。
+ * 23.0 -> "23"，53.30 -> "53.3"，12.34 -> "12.34"
+ */
 fun formatAmount(amount: Double): String =
-    String.format(Locale.CHINA, "%.2f", amount)
+    String.format(Locale.CHINA, "%.2f", amount).trimEnd('0').trimEnd('.')
 
 private val ymdFormatter = DateTimeFormatter.ofPattern("yyyy年M月d日", Locale.CHINA)
 
