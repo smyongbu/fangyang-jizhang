@@ -20,13 +20,15 @@ import androidx.navigation.compose.rememberNavController
 import com.fangyang.jizhang.ui.query.QueryScreen
 import com.fangyang.jizhang.ui.record.RecordFormScreen
 import com.fangyang.jizhang.ui.scan.ScannerScreen
+import com.fangyang.jizhang.ui.settings.BindingEditScreen
 import com.fangyang.jizhang.ui.settings.SettingsScreen
 
 private object Routes {
-    const val SCAN = "scan"
+    const val RECORDS = "records"     // 记录（列表，默认首页）
+    const val SCAN = "scan"           // 扫码（中间）
     const val FORM = "form"
-    const val QUERY = "query"
     const val SETTINGS = "settings"
+    const val SETTINGS_BINDINGS = "settings_bindings"
 }
 
 @Composable
@@ -35,38 +37,39 @@ fun MainScaffold(viewModel: ProductViewModel) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route
 
-    val onRecordTab = route == Routes.SCAN || route == Routes.FORM
-
     Scaffold(
         bottomBar = {
             NavigationBar {
+                // 第一个：记录（列表）
                 NavigationBarItem(
-                    selected = onRecordTab,
+                    selected = route == Routes.RECORDS,
                     onClick = {
-                        navController.navigate(Routes.SCAN) {
-                            popUpTo(Routes.SCAN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) },
-                    label = { Text("记录") },
-                )
-                NavigationBarItem(
-                    selected = route == Routes.QUERY,
-                    onClick = {
-                        navController.navigate(Routes.QUERY) {
-                            popUpTo(Routes.SCAN)
+                        navController.navigate(Routes.RECORDS) {
+                            popUpTo(Routes.RECORDS) { inclusive = true }
                             launchSingleTop = true
                         }
                     },
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
-                    label = { Text("查询") },
+                    label = { Text("记录") },
                 )
+                // 中间：扫码
                 NavigationBarItem(
-                    selected = route == Routes.SETTINGS,
+                    selected = route == Routes.SCAN || route == Routes.FORM,
+                    onClick = {
+                        navController.navigate(Routes.SCAN) {
+                            popUpTo(Routes.RECORDS)
+                            launchSingleTop = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) },
+                    label = { Text("扫码") },
+                )
+                // 第三个：设置
+                NavigationBarItem(
+                    selected = route == Routes.SETTINGS || route == Routes.SETTINGS_BINDINGS,
                     onClick = {
                         navController.navigate(Routes.SETTINGS) {
-                            popUpTo(Routes.SCAN)
+                            popUpTo(Routes.RECORDS)
                             launchSingleTop = true
                         }
                     },
@@ -78,9 +81,18 @@ fun MainScaffold(viewModel: ProductViewModel) {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.SCAN,
+            startDestination = Routes.RECORDS,   // 打开 app 进入记录页面
             modifier = Modifier.padding(padding),
         ) {
+            composable(Routes.RECORDS) {
+                QueryScreen(
+                    viewModel = viewModel,
+                    onEditRecord = { record ->
+                        viewModel.startEdit(record)
+                        navController.navigate(Routes.FORM)
+                    },
+                )
+            }
             composable(Routes.SCAN) {
                 ScannerScreen(onBarcodeScanned = { code ->
                     viewModel.startForm(code)
@@ -91,21 +103,15 @@ fun MainScaffold(viewModel: ProductViewModel) {
                 RecordFormScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
-                    // 保存后回到来的页面（扫码继续扫，或查询页）
+                    // 保存后回到来的页面（扫码继续扫，或记录列表）
                     onSaved = { navController.popBackStack() },
                 )
             }
-            composable(Routes.QUERY) {
-                QueryScreen(
-                    viewModel = viewModel,
-                    onEditRecord = { record ->
-                        viewModel.startEdit(record)
-                        navController.navigate(Routes.FORM)
-                    },
-                )
-            }
             composable(Routes.SETTINGS) {
-                SettingsScreen(viewModel)
+                SettingsScreen(onOpenBindings = { navController.navigate(Routes.SETTINGS_BINDINGS) })
+            }
+            composable(Routes.SETTINGS_BINDINGS) {
+                BindingEditScreen(viewModel = viewModel, onBack = { navController.popBackStack() })
             }
         }
     }

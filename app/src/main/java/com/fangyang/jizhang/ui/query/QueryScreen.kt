@@ -67,7 +67,7 @@ fun QueryScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("查询") }) },
+        topBar = { TopAppBar(title = { Text("记录") }) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             Row(
