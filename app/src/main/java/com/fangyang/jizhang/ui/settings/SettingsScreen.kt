@@ -43,8 +43,8 @@ fun SettingsScreen(onOpenBindings: () -> Unit, onOpenSync: () -> Unit) {
             )
             SettingEntry(
                 icon = Icons.Default.CloudSync,
-                title = "Dropbox 同步",
-                subtitle = "登录 Dropbox，自动备份/同步数据",
+                title = "坚果云同步",
+                subtitle = "用坚果云(WebDAV)自动备份/同步数据",
                 onClick = onOpenSync,
             )
         }

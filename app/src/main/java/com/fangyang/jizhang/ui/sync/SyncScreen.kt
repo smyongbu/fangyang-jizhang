@@ -1,7 +1,5 @@
 package com.fangyang.jizhang.ui.sync
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -10,19 +8,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,23 +32,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fangyang.jizhang.data.sync.CloudVersion
+import com.fangyang.jizhang.data.sync.WebDavConfig
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -60,24 +58,11 @@ import java.util.Locale
 @Composable
 fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    // 打开授权地址（一次性）
-    LaunchedEffect(state.openAuthUrl) {
-        state.openAuthUrl?.let { url ->
-            runCatching {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
-            }
-            viewModel.onAuthUrlOpened()
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dropbox 同步") },
+                title = { Text("坚果云同步") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
@@ -106,7 +91,7 @@ fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.fillMaxWidth(0.05f))
+                    Spacer(Modifier.width(10.dp))
                     Text("处理中…", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -131,48 +116,60 @@ fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
 
 @Composable
 private fun DisconnectedView(state: SyncUiState, viewModel: SyncViewModel) {
-    Text("把记账数据同步到你的 Dropbox", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+    var url by remember { mutableStateOf(state.savedUrl.ifBlank { WebDavConfig.DEFAULT_URL }) }
+    var username by remember { mutableStateOf(state.savedUsername) }
+    var password by remember { mutableStateOf("") }
+
+    Text("用坚果云(WebDAV)同步数据", fontWeight = FontWeight.Bold, fontSize = 18.sp)
     Spacer(Modifier.height(8.dp))
     Text(
-        "App 只能读写它在 Dropbox 里的专属文件夹，碰不到你别的文件。",
+        "在坚果云「账户信息 → 安全选项 → 第三方应用管理」里添加一个应用，生成一个【应用密码】，" +
+            "然后把账号(邮箱)和应用密码填到下面。",
         fontSize = 13.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(16.dp))
 
-    Button(onClick = viewModel::startLogin, modifier = Modifier.fillMaxWidth()) {
-        Text("连接 Dropbox")
-    }
-
-    if (state.awaitingCode) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "浏览器里登录并点「允许」后，会显示一串授权码。复制它，粘贴到下面：",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(8.dp))
-        var code by remember { mutableStateOf("") }
-        OutlinedTextField(
-            value = code,
-            onValueChange = { code = it },
-            label = { Text("授权码") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = { viewModel.completeLogin(code) },
-            enabled = code.isNotBlank() && !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("完成连接") }
-    }
+    OutlinedTextField(
+        value = url,
+        onValueChange = { url = it },
+        label = { Text("WebDAV 地址") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(10.dp))
+    OutlinedTextField(
+        value = username,
+        onValueChange = { username = it },
+        label = { Text("账号（邮箱）") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(10.dp))
+    OutlinedTextField(
+        value = password,
+        onValueChange = { password = it },
+        label = { Text("应用密码") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(
+        onClick = { viewModel.connect(url, username, password) },
+        enabled = !state.busy,
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("连接") }
 }
 
 @Composable
 private fun ConnectedView(state: SyncUiState, viewModel: SyncViewModel) {
-    Text("已连接 Dropbox", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+    Text("已连接坚果云", fontWeight = FontWeight.Bold, fontSize = 18.sp)
     Spacer(Modifier.height(6.dp))
+    Text(
+        "账号：${state.savedUsername}",
+        fontSize = 13.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
     Text(
         "上次同步：" + if (state.lastSync > 0) formatDateTime(state.lastSync) else "尚未同步",
         fontSize = 13.sp,
@@ -222,11 +219,7 @@ private fun ConflictDialog(
         ) {
             Text("云端和本地都有数据", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(Modifier.height(8.dp))
-            Text(
-                "请选择如何处理：",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text("请选择如何处理：", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
 
             Button(onClick = onMerge, modifier = Modifier.fillMaxWidth()) {
@@ -246,7 +239,7 @@ private fun ConflictDialog(
     }
 }
 
-/** 长按 3 秒确认的按钮：按住时进度条填充，松手取消，满 3 秒触发。 */
+/** 长按 3 秒确认：按住时进度条填充，松手取消，满 3 秒触发。 */
 @Composable
 private fun HoldToConfirmButton(
     text: String,
@@ -290,7 +283,6 @@ private fun HoldToConfirmButton(
             },
         contentAlignment = Alignment.CenterStart,
     ) {
-        // 进度填充
         Box(
             modifier = Modifier
                 .fillMaxWidth(progress)
@@ -336,14 +328,14 @@ private fun CloudVersionDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onPick(v.path) }
+                            .clickable { onPick(v.name) }
                             .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(formatDateTime(v.syncedAt))
                         Text("${v.sizeBytes} B", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Divider()
+                    HorizontalDivider()
                 }
             }
 

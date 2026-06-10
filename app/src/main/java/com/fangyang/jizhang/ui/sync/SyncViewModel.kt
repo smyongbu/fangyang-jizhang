@@ -24,10 +24,10 @@ data class SyncUiState(
     val connected: Boolean = false,
     val autoSync: Boolean = false,
     val lastSync: Long = 0L,
+    val savedUrl: String = "",
+    val savedUsername: String = "",
     val busy: Boolean = false,
     val message: String? = null,
-    val awaitingCode: Boolean = false,     // 已打开授权页，等待粘贴授权码
-    val openAuthUrl: String? = null,       // 需要打开的授权地址（一次性）
     val dialog: SyncDialog = SyncDialog.None,
 )
 
@@ -35,8 +35,6 @@ class SyncViewModel(private val manager: SyncManager) : ViewModel() {
 
     private val _state = MutableStateFlow(SyncUiState())
     val state: StateFlow<SyncUiState> = _state.asStateFlow()
-
-    private var verifier: String? = null
 
     init {
         syncStatus()
@@ -48,46 +46,39 @@ class SyncViewModel(private val manager: SyncManager) : ViewModel() {
                 connected = manager.isConnected,
                 autoSync = manager.autoSyncEnabled,
                 lastSync = manager.lastSyncMillis,
+                savedUrl = manager.savedBaseUrl,
+                savedUsername = manager.savedUsername,
                 busy = false,
                 message = message,
             ).extra()
         }
     }
 
-    // ---- 登录 ----
+    // ---- 连接 ----
 
-    fun startLogin() {
-        val v = manager.newVerifier()
-        verifier = v
-        _state.update { it.copy(openAuthUrl = manager.authorizeUrl(v), awaitingCode = true, message = null) }
-    }
-
-    fun onAuthUrlOpened() {
-        _state.update { it.copy(openAuthUrl = null) }
-    }
-
-    fun completeLogin(code: String) {
-        val v = verifier ?: return
-        if (code.isBlank()) return
+    fun connect(url: String, username: String, password: String) {
+        if (username.isBlank() || password.isBlank()) {
+            syncStatus("请填写账号和应用密码")
+            return
+        }
         launchBusy {
-            manager.completeLogin(code, v)
+            manager.connect(url, username, password)
             val cloud = manager.listVersions()
             val localEmpty = manager.isLocalEmpty()
             when {
                 cloud.isEmpty() -> {
                     manager.uploadCurrent()
-                    syncStatus("已连接，本地数据已备份到 Dropbox") { copy(awaitingCode = false) }
+                    syncStatus("已连接，本地数据已备份到坚果云")
                 }
-                localEmpty -> syncStatus { copy(awaitingCode = false, dialog = SyncDialog.CloudOnly(cloud)) }
-                else -> syncStatus { copy(awaitingCode = false, dialog = SyncDialog.Conflict) }
+                localEmpty -> syncStatus { copy(dialog = SyncDialog.CloudOnly(cloud)) }
+                else -> syncStatus { copy(dialog = SyncDialog.Conflict) }
             }
         }
     }
 
     fun disconnect() {
         manager.disconnect()
-        verifier = null
-        _state.value = SyncUiState()
+        syncStatus("已断开")
     }
 
     // ---- 同步 ----
@@ -112,8 +103,8 @@ class SyncViewModel(private val manager: SyncManager) : ViewModel() {
         syncStatus("已用本地数据覆盖云端") { copy(dialog = SyncDialog.None) }
     }
 
-    fun downloadVersion(path: String) = launchBusy {
-        manager.keepCloud(path)
+    fun downloadVersion(name: String) = launchBusy {
+        manager.keepCloud(name)
         syncStatus("已下载该版本数据") { copy(dialog = SyncDialog.None) }
     }
 
